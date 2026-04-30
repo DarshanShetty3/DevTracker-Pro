@@ -1,0 +1,4 @@
+# Ignore the backend dependencies and build
+backend/node_modules/
+backend/dist/
+.env
