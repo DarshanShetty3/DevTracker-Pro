@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Mail, Phone, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-// import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function AuthPage() {
     const { login } = useAuth();
-    // const navigate = useNavigate();
+    const navigate = useNavigate();
 
     const [isLogin, setIsLogin] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
@@ -31,30 +31,47 @@ export default function AuthPage() {
         setError('');
 
         try {
-            // 2. Custom Validation for Sign Up
             if (!isLogin && !formData.email && !formData.phone) {
                 throw new Error('Please provide either an email or a phone number.');
             }
-
             if (formData.password.length < 6) {
                 throw new Error('Password must be at least 6 characters.');
             }
 
-            console.log('Submitting:', isLogin ? 'Login' : 'Signup', formData);
+            // 1. Determine endpoint and payload
+            const endpoint = isLogin ? '/login' : '/register';
+            const payload = isLogin
+                ? { identifier: formData.email, password: formData.password } // Login Payload
+                : { name: formData.name, email: formData.email, phone: formData.phone, password: formData.password }; // Register Payload
 
-            // Simulating a network request
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            // 2. Call your Express Backend
+            const response = await fetch(`http://localhost:5000/api/auth${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-            // Mock successful login
-            login(
-                { id: 1, name: formData.name || 'Developer', email: formData.email || formData.phone },
-                'mock_jwt_token_12345'
-            );
+            const data = await response.json();
 
-            // navigate('/dashboard'); 
+            // 3. Handle Backend Errors
+            if (!response.ok) {
+                throw new Error(data.error || 'Authentication failed');
+            }
+
+            // 4. Handle Success
+            if (!isLogin) {
+                // If they registered successfully, automatically switch to login view
+                setIsLogin(true);
+                setError('');
+                alert('Account created! You can now log in.');
+            } else {
+                // If they logged in successfully, save token and redirect
+                login(data.user, data.token);
+                navigate('/dashboard'); // Take them to the app!
+            }
 
         } catch (err: any) {
-            setError(err.message || 'Something went wrong. Please try again.');
+            setError(err.message || 'Network error. Is the server running?');
         } finally {
             setIsLoading(false);
         }

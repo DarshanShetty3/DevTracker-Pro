@@ -28,13 +28,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const login = (userData: User, jwt: string) => {
         setUser(userData);
         setToken(jwt);
-        // TODO: Save token to localStorage here
+        localStorage.setItem('devtracker_token', jwt);
+        localStorage.setItem('devtracker_user', JSON.stringify(userData));
     };
 
     const logout = () => {
         setUser(null);
         setToken(null);
-        // TODO: Remove token from localStorage here
+        localStorage.removeItem('devtracker_token');
+        localStorage.removeItem('devtracker_user');
     };
 
     return (
